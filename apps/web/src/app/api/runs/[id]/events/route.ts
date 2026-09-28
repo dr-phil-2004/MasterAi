@@ -1,5 +1,5 @@
 import { getDb, getRun, listRunEvents } from '@masterai/db';
-import { getSessionContext } from '@/lib/session';
+import { sessionOrResponse } from '@/lib/session';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -7,7 +7,9 @@ export const maxDuration = 300;
 /** Flux SSE du journal d'une exécution, pour le suivi en temps réel dans l'UI. */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const ctx = await getSessionContext();
+  const session = await sessionOrResponse();
+  if (session instanceof Response) return session;
+  const ctx = session;
   const db = getDb();
 
   const stream = new ReadableStream({

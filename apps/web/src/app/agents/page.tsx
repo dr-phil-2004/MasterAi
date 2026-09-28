@@ -1,11 +1,25 @@
 import { loadAgentConfigs, TOOL_DESCRIPTIONS, type ToolId } from '@masterai/core';
-import { getSessionContext } from '@/lib/session';
+import { getSessionContextSafe } from '@/lib/session';
+import { SetupNotice } from '@/components/setup-notice';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AgentsPage() {
-  const ctx = await getSessionContext();
-  const configs = [...(await loadAgentConfigs(ctx.tenantId)).values()];
+  const session = await getSessionContextSafe();
+  if (!session.ok) {
+    return (
+      <>
+        <div className="page-head">
+          <div>
+            <h1>Agents</h1>
+            <div className="sub">Rôles prédéfinis de la chaîne, modifiables.</div>
+          </div>
+        </div>
+        <SetupNotice reason={session.reason} message={session.message} />
+      </>
+    );
+  }
+  const configs = [...(await loadAgentConfigs(session.ctx.tenantId)).values()];
 
   return (
     <>
