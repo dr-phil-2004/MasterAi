@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb, listProjects, projects, runs } from '@masterai/db';
 import { pdfToText, startRun } from '@masterai/core';
-import { getSessionContext } from '@/lib/session';
+import { sessionOrResponse } from '@/lib/session';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -20,7 +20,9 @@ function slugify(name: string) {
 }
 
 export async function GET() {
-  const ctx = await getSessionContext();
+  const s = await sessionOrResponse();
+  if (s instanceof Response) return s;
+  const ctx = s;
   return NextResponse.json({ projects: await listProjects(getDb(), ctx.tenantId) });
 }
 
@@ -33,7 +35,9 @@ const schema = z.object({
 
 /** Crée un projet, lance la chaîne en tâche de fond et renvoie l'identifiant d'exécution. */
 export async function POST(request: Request) {
-  const ctx = await getSessionContext();
+  const s = await sessionOrResponse();
+  if (s instanceof Response) return s;
+  const ctx = s;
   const body = schema.parse(await request.json());
 
   let specText = body.specText?.trim() ?? '';

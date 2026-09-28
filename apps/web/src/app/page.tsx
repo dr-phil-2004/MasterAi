@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getDb, listProjects, listRuns } from '@masterai/db';
-import { getSessionContext } from '@/lib/session';
+import { getSessionContextSafe } from '@/lib/session';
+import { SetupNotice } from '@/components/setup-notice';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,9 +15,22 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function ProjectsPage() {
-  const ctx = await getSessionContext();
+  const session = await getSessionContextSafe();
+  if (!session.ok) {
+    return (
+      <>
+        <div className="page-head">
+          <div>
+            <h1>Projets</h1>
+            <div className="sub">Du cahier des charges à la production, sans intervention humaine.</div>
+          </div>
+        </div>
+        <SetupNotice reason={session.reason} message={session.message} />
+      </>
+    );
+  }
   const db = getDb();
-  const [projects, runs] = await Promise.all([listProjects(db, ctx.tenantId), listRuns(db, ctx.tenantId)]);
+  const [projects, runs] = await Promise.all([listProjects(db, session.ctx.tenantId), listRuns(db, session.ctx.tenantId)]);
   const latestRun = new Map<string, string>();
   for (const run of runs) if (!latestRun.has(run.projectId)) latestRun.set(run.projectId, run.id);
 

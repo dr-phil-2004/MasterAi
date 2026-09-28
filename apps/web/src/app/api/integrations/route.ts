@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb, integrationKind, listIntegrations, upsertIntegration } from '@masterai/db';
-import { getSessionContext } from '@/lib/session';
+import { sessionOrResponse } from '@/lib/session';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const ctx = await getSessionContext();
+  const s = await sessionOrResponse();
+  if (s instanceof Response) return s;
+  const ctx = s;
   const list = await listIntegrations(getDb(), ctx);
   return NextResponse.json({
     integrations: list.map((i) => ({ kind: i.kind, hasSecret: Boolean(i.secret), config: i.config })),
@@ -20,7 +22,9 @@ const schema = z.object({
 });
 
 export async function PUT(request: Request) {
-  const ctx = await getSessionContext();
+  const s = await sessionOrResponse();
+  if (s instanceof Response) return s;
+  const ctx = s;
   const body = schema.parse(await request.json());
   await upsertIntegration(getDb(), ctx, body);
   return NextResponse.json({ ok: true });
