@@ -12,6 +12,7 @@ export { evaluateGates } from './gates/evaluate';
 export { DEFAULT_LOOP_POLICY, decideNext, initialLoopState, recordIteration } from './gates/loop-policy';
 export { TOOL_REGISTRY, TOOL_DESCRIPTIONS, type ToolId } from './tools';
 export { startRun } from './run';
+export { seedBuiltinAgents } from './seed';
 export { pdfToText } from './integrations/pdf';
 export { maskSecret } from '@masterai/db';
 export type { ChainData } from './workflows/schemas';
