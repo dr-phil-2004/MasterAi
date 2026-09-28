@@ -3,7 +3,9 @@
   "private": true,
   "description": "Plateforme d'orchestration d'agents IA pour automatiser toute la chaîne de développement (Mastra).",
   "packageManager": "pnpm@10.33.0",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "turbo run dev",
     "dev:studio": "pnpm --filter @masterai/core mastra:dev",
@@ -13,7 +15,7 @@
     "lint": "turbo run lint",
     "db:generate": "pnpm --filter @masterai/db generate",
     "db:migrate": "pnpm --filter @masterai/db migrate",
-    "db:seed": "pnpm --filter @masterai/db seed"
+    "db:seed": "pnpm --filter @masterai/core seed"
   },
   "devDependencies": {
     "turbo": "^2.5.0",
