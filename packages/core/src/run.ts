@@ -1,5 +1,5 @@
 import { getDb, updateRun } from '@masterai/db';
-import { mastra } from './mastra';
+import { getMastra } from './mastra/instance';
 import { devChainWorkflow } from './workflows/dev-chain';
 import { initialChainData } from './workflows/dev-chain';
 import { releaseRuntime } from './lib/runtime';
@@ -17,7 +17,7 @@ export async function startRun(input: {
   specText: string;
   sourceRepo?: string;
 }): Promise<void> {
-  const workflow = mastra.getWorkflow('devChainWorkflow') ?? devChainWorkflow;
+  const workflow = getMastra().getWorkflow('devChainWorkflow') ?? devChainWorkflow;
   const run = await workflow.createRun();
   await updateRun(getDb(), input.runId, { workflowRunId: run.runId, status: 'running' });
   try {
