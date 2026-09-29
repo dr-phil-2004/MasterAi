@@ -69,3 +69,44 @@ label .hint { font-weight: 400; color: var(--muted); }
 .stack { display: flex; flex-direction: column; gap: 4px; }
 .pill-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .pill { background: var(--panel-2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; font-size: 12px; color: var(--muted); }
+
+/* --- Éditeur d'agents ------------------------------------------------------ */
+.agent-card { transition: border-color 0.15s ease; }
+.agent-card:hover { border-color: var(--accent); }
+.link { color: var(--accent); }
+.link:hover { text-decoration: underline; }
+
+.editor { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.editor-main, .editor-side { display: flex; flex-direction: column; gap: 16px; }
+.editor-side { position: sticky; top: 20px; }
+.editor h2 { font-size: 15px; }
+.instructions { font-size: 13px; line-height: 1.6; resize: vertical; min-height: 280px; }
+
+.model-row { display: flex; align-items: center; gap: 8px; }
+.model-row input { flex: 1; min-width: 0; }
+.model-rank { width: 68px; flex-shrink: 0; font-size: 12px; color: var(--muted); }
+.icon-btn { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); border-radius: 7px; width: 30px; height: 30px; cursor: pointer; flex-shrink: 0; font-family: inherit; }
+.icon-btn:hover:not(:disabled) { border-color: var(--accent); }
+.icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn.danger { background: transparent; color: var(--error); border: 1px solid var(--error); }
+.btn.danger:hover { background: rgba(242, 103, 138, 0.1); }
+
+.field-error { color: var(--error); font-size: 13px; margin: 6px 0 0; }
+.field-success { color: var(--success); font-size: 13px; margin: 8px 0 0; }
+
+.check, .switch { display: flex; align-items: center; gap: 10px; font-weight: 400; margin: 0; cursor: pointer; }
+.check input, .switch input { width: auto; accent-color: var(--accent); }
+.switch span { font-weight: 600; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { flex-direction: row; flex-wrap: wrap; padding: 12px; }
+  .main { padding: 20px 16px; }
+  .grid.cols-2, .grid.cols-3 { grid-template-columns: 1fr; }
+  .editor { grid-template-columns: 1fr; }
+  .editor-side { position: static; }
+  .model-row { flex-wrap: wrap; }
+  .model-rank { width: 100%; }
+  .model-row input { flex-basis: 100%; }
+}

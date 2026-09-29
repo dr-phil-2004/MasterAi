@@ -64,5 +64,5 @@ Mastra Studio (inspection des agents et workflows) : `pnpm dev:studio`.
 
 ## Feuille de route
 
-Voir [`docs/ROADMAP.md`](docs/ROADMAP.md) : éditeur visuel d'agents, DAST intégré,
+Voir [`docs/ROADMAP.md`](docs/ROADMAP.md) : DAST intégré,
 multi-stack, multi-tenant complet, facturation.

@@ -16,8 +16,8 @@
 
 ## V2 — Personnalisation et robustesse
 
-- [ ] Éditeur visuel d'agents (instructions, modèles, outils, température) dans l'UI.
-- [ ] Création guidée d'agents personnalisés rattachés à une phase.
+- [x] Éditeur visuel d'agents (instructions, modèles, outils, température) dans l'UI.
+- [x] Création guidée d'agents personnalisés rattachés à une phase.
 - [ ] DAST piloté par la plateforme (borné au staging), avec file d'attente dédiée.
 - [ ] Mobile (Expo) de bout en bout, tests inclus.
 - [ ] Reprise d'exécution après incident via les snapshots de workflow.
