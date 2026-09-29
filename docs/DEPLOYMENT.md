@@ -43,3 +43,18 @@ pnpm db:seed      # crée le tenant par défaut + les agents prédéfinis
 ```bash
 pnpm --filter @masterai/web build   # doit passer sans DATABASE_URL
 ```
+
+## Limite actuelle : durée d'exécution de la chaîne
+
+La chaîne est lancée depuis `POST /api/projects` via `after()` : la fonction Vercel reste active après
+la réponse, **mais seulement jusqu'à `maxDuration` (300 s)**. Une chaîne complète (analyse, build,
+boucle de correction, déploiement) dure bien plus longtemps : sur Vercel, elle sera interrompue au bout
+de 5 minutes.
+
+Pistes pour lever cette limite (prochaine étape) :
+
+- exécuter les workflows Mastra dans un **worker dédié** (processus long, hors fonction serverless) ;
+- ou un moteur d'exécution durable (Inngest / Vercel Workflow), qui découpe la chaîne en étapes
+  reprenables — Mastra persiste déjà l'état de chaque étape (snapshots).
+
+En local (`next start`), il n'y a pas de limite : la chaîne tourne jusqu'au bout.
