@@ -22,7 +22,11 @@ export function RunMonitor({ runId, initialRun, project }: { runId: string; init
 
   useEffect(() => {
     const source = new EventSource(`/api/runs/${runId}/events`);
-    source.addEventListener('log', (e) => setEvents((prev) => [...prev, JSON.parse((e as MessageEvent).data)]));
+    // Une reconnexion automatique d'EventSource rejoue l'historique : on dédoublonne par identifiant.
+    source.addEventListener('log', (e) => {
+      const event = JSON.parse((e as MessageEvent).data) as RunEvent;
+      setEvents((prev) => (prev.some((x) => x.id === event.id) ? prev : [...prev, event]));
+    });
     source.addEventListener('run', (e) => setRun(JSON.parse((e as MessageEvent).data)));
     source.addEventListener('done', () => source.close());
     return () => source.close();
@@ -92,8 +96,8 @@ export function RunMonitor({ runId, initialRun, project }: { runId: string; init
       </div>
 
       {run.report && (
-        <div className="card" style={{ marginTop: 16 }}>
-          <h2>Rapport final</h2>
+        <div className="card" style={{ marginTop: 16, borderColor: run.status === 'failed' ? 'var(--error)' : undefined }}>
+          <h2>{run.status === 'failed' ? 'Cause de l’échec' : 'Rapport final'}</h2>
           <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'var(--mono)', fontSize: 13 }}>{run.report}</pre>
         </div>
       )}

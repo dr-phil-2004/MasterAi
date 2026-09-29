@@ -1,41 +1,73 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { readJson } from '@/lib/fetch-json';
+
+/** 3 Mo : une fois encodé en base64 (+33 %), le corps reste sous la limite de 4,5 Mo de Vercel. */
+const MAX_PDF_BYTES = 3 * 1024 * 1024;
+
+interface Missing {
+  id: string;
+  label: string;
+  href: string;
+}
+
+/** Encode un fichier en base64 avec les API du navigateur (pas de `Buffer` côté client). */
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+    reader.onerror = () => reject(reader.error ?? new Error('Lecture du fichier impossible.'));
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function NewProjectPage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [specText, setSpecText] = useState('');
   const [sourceRepo, setSourceRepo] = useState('');
-  const [pdfName, setPdfName] = useState<string>();
-  const [pdfBase64, setPdfBase64] = useState<string>();
+  const [pdf, setPdf] = useState<File>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const [missing, setMissing] = useState<Missing[]>([]);
 
-  async function onPdf(file: File) {
-    const buffer = await file.arrayBuffer();
-    setPdfBase64(Buffer.from(buffer).toString('base64'));
-    setPdfName(file.name);
+  function onPdf(file: File | undefined) {
+    setError(undefined);
+    if (file && file.size > MAX_PDF_BYTES) {
+      setPdf(undefined);
+      setError(`PDF trop volumineux (${(file.size / 1024 / 1024).toFixed(1)} Mo, 3 Mo maximum). Collez plutôt le texte.`);
+      return;
+    }
+    setPdf(file);
   }
 
   async function submit() {
     setLoading(true);
     setError(undefined);
+    setMissing([]);
     try {
+      const specPdfBase64 = pdf ? await fileToBase64(pdf) : undefined;
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, specText, specPdfBase64: pdfBase64, sourceRepo: sourceRepo || undefined }),
+        body: JSON.stringify({ name, specText, specPdfBase64, sourceRepo: sourceRepo || undefined }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Échec de la création.');
+      const data = await readJson<{ runId?: string; missing?: Missing[] }>(res);
+      if (!res.ok || !data.runId) {
+        setMissing(data.missing ?? []);
+        throw new Error(data.error ?? 'Échec de la création.');
+      }
       router.push(`/runs/${data.runId}`);
     } catch (e) {
       setError((e as Error).message);
       setLoading(false);
     }
   }
+
+  const canSubmit = name.trim().length >= 2 && (specText.trim().length > 0 || Boolean(pdf));
 
   return (
     <>
@@ -50,9 +82,11 @@ export default function NewProjectPage() {
         <label>Nom du projet</label>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Plateforme de réservation" />
 
-        <label>Cahier des charges <span className="hint">— PDF ou texte</span></label>
-        <input type="file" accept="application/pdf" onChange={(e) => e.target.files?.[0] && onPdf(e.target.files[0])} />
-        {pdfName && <div className="muted mono" style={{ marginTop: 6 }}>📄 {pdfName}</div>}
+        <label>
+          Cahier des charges <span className="hint">— PDF (3 Mo max) et/ou texte</span>
+        </label>
+        <input type="file" accept="application/pdf" onChange={(e) => onPdf(e.target.files?.[0])} />
+        {pdf && <div className="muted mono" style={{ marginTop: 6 }}>📄 {pdf.name}</div>}
         <textarea
           rows={8}
           value={specText}
@@ -61,13 +95,31 @@ export default function NewProjectPage() {
           style={{ marginTop: 8 }}
         />
 
-        <label>Dépôt existant <span className="hint">— optionnel, format owner/repo</span></label>
+        <label>
+          Dépôt existant <span className="hint">— optionnel : owner/repo ou URL GitHub</span>
+        </label>
         <input value={sourceRepo} onChange={(e) => setSourceRepo(e.target.value)} placeholder="mon-org/mon-app" />
 
-        {error && <div className="badge failed" style={{ marginTop: 16 }}>{error}</div>}
+        {error && (
+          <div className="alert" role="alert">
+            <strong>{error}</strong>
+            {missing.length > 0 && (
+              <ul>
+                {missing.map((m) => (
+                  <li key={m.id}>
+                    {m.label} —{' '}
+                    <Link href={m.href} className="link">
+                      configurer
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
-          <button className="btn" onClick={submit} disabled={loading || !name}>
+          <button className="btn" onClick={submit} disabled={loading || !canSubmit}>
             {loading ? 'Lancement…' : 'Lancer la chaîne'}
           </button>
         </div>

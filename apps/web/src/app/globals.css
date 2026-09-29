@@ -110,3 +110,8 @@ label .hint { font-weight: 400; color: var(--muted); }
   .model-rank { width: 100%; }
   .model-row input { flex-basis: 100%; }
 }
+
+/* --- Alertes ---------------------------------------------------------------- */
+.alert { margin-top: 16px; padding: 12px 14px; border: 1px solid var(--error); border-radius: 10px; background: rgba(242, 103, 138, 0.08); color: var(--text); }
+.alert strong { color: var(--error); }
+.alert ul { margin: 8px 0 0; padding-left: 18px; line-height: 1.8; }
