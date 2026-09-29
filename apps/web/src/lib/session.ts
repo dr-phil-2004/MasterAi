@@ -1,8 +1,8 @@
-import { getDb, getDefaultContext, type TenantContext } from '@masterai/db';
+import { getDb, getDefaultContext, resolveDatabaseUrl, type TenantContext } from '@masterai/db';
 
-/** Vrai si une base de données de plateforme est configurée. */
+/** Vrai si une base de données de plateforme est configurée (DATABASE_URL ou variantes Vercel/Neon). */
 export function dbConfigured(): boolean {
-  return Boolean(process.env.DATABASE_URL);
+  return Boolean(resolveDatabaseUrl());
 }
 
 export type SessionResult =
