@@ -2,6 +2,7 @@ import { Mastra } from '@mastra/core';
 import { PinoLogger } from '@mastra/loggers';
 import { PostgresStore } from '@mastra/pg';
 import { LibSQLStore } from '@mastra/libsql';
+import { resolveDatabaseUrl } from '@masterai/db';
 import { studioAgents } from '../agents/factory';
 import { devChainWorkflow } from '../workflows/dev-chain';
 
@@ -11,7 +12,7 @@ import { devChainWorkflow } from '../workflows/dev-chain';
  * `next build` (collecte des routes) là où aucune base n'est disponible.
  */
 function storage() {
-  const url = process.env.MASTRA_DATABASE_URL ?? process.env.DATABASE_URL;
+  const url = process.env.MASTRA_DATABASE_URL ?? resolveDatabaseUrl();
   if (url) return new PostgresStore({ id: 'masterai', connectionString: url });
   return new LibSQLStore({ id: 'masterai', url: process.env.MASTRA_LIBSQL_URL ?? 'file:./.mastra/masterai.db' });
 }
