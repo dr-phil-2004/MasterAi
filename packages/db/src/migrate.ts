@@ -13,21 +13,49 @@ export const MIGRATION_SQL = "CREATE TYPE \"public\".\"integration_kind\" AS ENU
 /** Codes d'erreur PostgreSQL « objet déjà existant » : rendent la migration idempotente. */
 const ALREADY_EXISTS = new Set(['42P07', '42710', '42P06', '42P16', '42704', '23505']);
 
+/** Enveloppe une instruction dans un bloc PL/pgSQL qui ignore l'erreur « objet déjà existant ». */
+function wrapDuplicateSafe(statement: string): string {
+  const body = statement.replace(/;\s*$/, '');
+  return `DO $$ BEGIN\n${body};\nEXCEPTION WHEN duplicate_object THEN NULL; END $$;`;
+}
+
 /**
- * Découpe le SQL en instructions exécutables et rend les index idempotents
- * (`CREATE INDEX IF NOT EXISTS`). Fonction pure, testable sans base.
+ * Découpe le SQL en instructions exécutables et les rend **idempotentes au niveau SQL**
+ * (indépendamment de la gestion d'erreur JS), pour être rejouables sans risque :
+ * - `CREATE TABLE` → `CREATE TABLE IF NOT EXISTS`
+ * - `CREATE [UNIQUE] INDEX` → `... IF NOT EXISTS`
+ * - `CREATE TYPE` et `ALTER TABLE ... ADD CONSTRAINT` → bloc `DO` ignorant les doublons
+ * Fonction pure, testable sans base.
  */
 export function prepareMigrationStatements(migrationSql: string): string[] {
   return migrationSql
     .split('--> statement-breakpoint')
     .map((s) => s.trim())
     .filter(Boolean)
-    .map((s) => s.replace(/^CREATE (UNIQUE )?INDEX /i, (_m, u) => `CREATE ${u ?? ''}INDEX IF NOT EXISTS `));
+    .map((s) => {
+      if (/^CREATE TABLE /i.test(s)) return s.replace(/^CREATE TABLE /i, 'CREATE TABLE IF NOT EXISTS ');
+      if (/^CREATE (UNIQUE )?INDEX /i.test(s)) {
+        return s.replace(/^CREATE (UNIQUE )?INDEX /i, (_m, u) => `CREATE ${u ?? ''}INDEX IF NOT EXISTS `);
+      }
+      if (/^CREATE TYPE /i.test(s) || /^ALTER TABLE .* ADD CONSTRAINT /i.test(s)) return wrapDuplicateSafe(s);
+      return s;
+    });
+}
+
+/** Remonte la chaîne des causes pour trouver le code d'erreur PostgreSQL (drizzle l'imbrique sous `.cause`). */
+export function pgErrorCode(error: unknown): string | undefined {
+  let current: unknown = error;
+  for (let i = 0; i < 5 && current; i++) {
+    const code = (current as { code?: string }).code;
+    if (code) return code;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return undefined;
 }
 
 /**
- * Applique le schéma de façon idempotente : chaque instruction est exécutée,
- * et les erreurs « existe déjà » sont ignorées (rejouable sans risque).
+ * Applique le schéma de façon idempotente. Les instructions sont déjà idempotentes au niveau SQL ;
+ * un filet de sécurité JS ignore en plus les codes « objet déjà existant » (en remontant les causes).
  */
 export async function runMigrations(db: Database): Promise<{ applied: number; skipped: number }> {
   const statements = prepareMigrationStatements(MIGRATION_SQL);
@@ -39,7 +67,7 @@ export async function runMigrations(db: Database): Promise<{ applied: number; sk
       await db.execute(sql.raw(statement));
       applied++;
     } catch (error) {
-      const code = (error as { code?: string }).code;
+      const code = pgErrorCode(error);
       if (code && ALREADY_EXISTS.has(code)) {
         skipped++;
         continue;
