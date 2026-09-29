@@ -4,7 +4,7 @@
 export { getMastra } from './mastra/instance';
 export { devChainWorkflow, initialChainData } from './workflows/dev-chain';
 export * from './agents/roles';
-export { loadAgentConfigs, studioAgents } from './agents/factory';
+export { loadAgentConfigs, studioAgents, type ResolvedAgentConfig } from './agents/factory';
 export * from './lib/models';
 export { registerRuntime, releaseRuntime, loadRuntime, requestContextFor } from './lib/runtime';
 export * from './gates/types';

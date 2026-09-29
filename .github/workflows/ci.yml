@@ -18,4 +18,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-      - run: pnpm --filter @masterai/core test
+      - run: pnpm -r test
