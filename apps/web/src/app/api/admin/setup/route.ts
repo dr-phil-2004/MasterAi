@@ -48,9 +48,14 @@ async function handle(request: Request): Promise<Response> {
     });
   } catch (error) {
     // On renvoie la cause en JSON plutôt qu'un 500 muet, pour pouvoir diagnostiquer.
-    const err = error as { message?: string; code?: string };
+    const err = error as { message?: string; code?: string; cause?: { message?: string; code?: string } };
     return NextResponse.json(
-      { error: "Échec de l'initialisation.", detail: err.message ?? String(error), code: err.code },
+      {
+        error: "Échec de l'initialisation.",
+        detail: err.message ?? String(error),
+        cause: err.cause?.message,
+        code: err.code ?? err.cause?.code,
+      },
       { status: 500 },
     );
   }
